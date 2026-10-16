@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#07111f">
+<title>PitchPerfect AI — Cricket Coach</title>
+<style>
+:root{--bg:#07111f;--panel:#101e30;--panel2:#15263b;--text:#eef6ff;--muted:#9bb0c8;--lime:#b8f36b;--cyan:#65d8e8;--line:#29405a;--warn:#ffd27a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 400px at 10% -10%,#163553 0%,transparent 65%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:920px;margin:auto;padding:18px 14px 36px}.brand{display:flex;align-items:center;gap:12px;margin:6px 0 18px}.logo{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,var(--lime),#54c7c9);color:#06111d;font-size:25px;font-weight:900}.eyebrow{color:var(--lime);font-size:11px;font-weight:800;letter-spacing:2px}.brand h1{font-size:22px;margin:2px 0}.sub{color:var(--muted);font-size:13px}
+.panel{background:linear-gradient(180deg,var(--panel),#0d1929);border:1px solid var(--line);border-radius:19px;padding:15px;margin:12px 0;box-shadow:0 12px 32px #0002}.section-title{font-size:16px;font-weight:800;margin:0 0 10px}.note{font-size:12px;line-height:1.5;color:var(--muted)}
+input[type=file]{display:block;width:100%;padding:12px;background:var(--panel2);border:1px dashed #47627e;border-radius:12px;color:var(--text);font-size:13px}
+button{border:0;border-radius:12px;padding:12px 14px;font-weight:800;font-size:14px;cursor:pointer}.primary{background:var(--lime);color:#10200a}.secondary{background:#20364f;color:var(--text);border:1px solid #3a536d}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.stage{position:relative;background:#03070d;border-radius:15px;overflow:hidden;min-height:180px;display:grid;place-items:center}.stage video{display:block;width:100%;max-height:62vh;object-fit:contain}.stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.placeholder{padding:42px 15px;text-align:center;color:var(--muted);font-size:13px}.status{font-size:12px;color:var(--cyan);margin-top:10px;min-height:18px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric{padding:12px;border:1px solid var(--line);border-radius:13px;background:#0b1726}.metric .label{font-size:11px;color:var(--muted)}.metric .value{font-size:21px;font-weight:850;margin-top:4px}.metric .hint{font-size:11px;color:var(--muted);margin-top:3px}.feedback{padding:11px 12px;border-radius:12px;background:#14283a;margin:8px 0;font-size:13px;line-height:1.45;border-left:3px solid var(--cyan)}.feedback.warn{border-left-color:var(--warn)}.footer{font-size:11px;color:#8299b2;line-height:1.5;margin:14px 3px}.pill{display:inline-block;border:1px solid #47627e;border-radius:99px;padding:4px 8px;font-size:10px;color:var(--muted);margin:0 4px 4px 0}
+@media(min-width:700px){.twocol{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<main>
+<header class="brand"><div class="logo">🏏</div><div><div class="eyebrow">YOUR FREE PRACTICE PARTNER</div><h1>PitchPerfect AI</h1><div class="sub">Cricket video • body-pose overlay • basic movement feedback</div></div></header>
+<div class="panel">
+  <h2 class="section-title">1. Add your batting video</h2>
+  <input id="file" type="file" accept="video/*">
+  <div class="note" style="margin-top:8px">Best results: full body visible, camera steady, bright light, one player in frame. Use a short clip (5–20 seconds) to keep your phone from overheating.</div>
+  <div class="buttons"><button id="loadBtn" class="primary">Load video</button><button id="analyzeBtn" class="secondary" disabled>Start pose analysis</button><button id="stopBtn" class="secondary" disabled>Stop</button></div>
+  <div id="status" class="status">Ready. Choose a video to begin.</div>
+</div>
+<div class="twocol">
+  <section class="panel">
+    <h2 class="section-title">2. Video + skeleton</h2>
+    <div class="stage" id="stage"><div class="placeholder" id="placeholder">Your video and detected body landmarks will appear here.</div><video id="video" playsinline controls hidden></video><canvas id="overlay" hidden></canvas></div>
+    <div style="margin-top:10px"><span class="pill">On-device video selection</span><span class="pill">Pose landmarks</span><span class="pill">No account</span></div>
+  </section>
+  <section class="panel">
+    <h2 class="section-title">3. Movement snapshot</h2>
+    <div class="grid">
+      <div class="metric"><div class="label">Left elbow angle</div><div class="value" id="leftElbow">—</div><div class="hint">Approximate 2D angle</div></div>
+      <div class="metric"><div class="label">Right elbow angle</div><div class="value" id="rightElbow">—</div><div class="hint">Approximate 2D angle</div></div>
+      <div class="metric"><div class="label">Left knee angle</div><div class="value" id="leftKnee">—</div><div class="hint">Approximate 2D angle</div></div>
+      <div class="metric"><div class="label">Right knee angle</div><div class="value" id="rightKnee">—</div><div class="hint">Approximate 2D angle</div></div>
+    </div>
+    <h3 style="font-size:14px;margin:16px 0 8px">Coach notes</h3>
+    <div id="feedback"><div class="feedback">Load a video, then start analysis to get basic posture notes.</div></div>
+  </section>
+</div>
+<div class="panel">
+  <h2 class="section-title">What this first version can — and cannot — do</h2>
+  <div class="note"><b style="color:var(--text)">Can:</b> estimate visible body landmarks, draw a skeleton overlay, and calculate approximate elbow/knee angles for the current video frame.<br><br><b style="color:var(--text)">Cannot yet:</b> reliably identify every cricket shot, track the bat or ball, judge timing/contact, or promise professional coaching accuracy. These angles are 2D estimates and depend on camera angle and visibility. Treat notes as practice hints, not a definitive technique score.</div>
+</div>
+<p class="footer">Privacy: this page uses the video file you select in your browser. The pose model files are downloaded from a public CDN when analysis starts, so internet is required for the model. The video itself is not intentionally uploaded by this page. Use your own video or get permission before analysing someone else's clip. Free/open-source software does not guarantee a hosted website or app-store publishing will be free.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js"></script>
+<script>
+const fileInput=document.getElementById('file'), video=document.getElementById('video'), canvas=document.getElementById('overlay'), ctx=canvas.getContext('2d');
+const statusEl=document.getElementById('status'), placeholder=document.getElementById('placeholder'), analyzeBtn=document.getElementById('analyzeBtn'), stopBtn=document.getElementById('stopBtn');
+let objectUrl=null, pose=null, running=false, busy=false, lastPoints=null, lastFeedback='';
+function status(s){statusEl.textContent=s}
+document.getElementById('loadBtn').addEventListener('click',()=>{
+ const f=fileInput.files&&fileInput.files[0]; if(!f){status('Please choose a video file first.');return}
+ if(objectUrl)URL.revokeObjectURL(objectUrl); objectUrl=URL.createObjectURL(f); video.src=objectUrl; video.hidden=false; canvas.hidden=false; placeholder.hidden=true; analyzeBtn.disabled=false; status('Video loaded. Press Start pose analysis.');
+ video.onloadedmetadata=()=>{canvas.width=video.videoWidth||640;canvas.height=video.videoHeight||360;drawEmpty()};
+});
+function drawEmpty(){ctx.clearRect(0,0,canvas.width,canvas.height)}
+function angle(a,b,c){if(!a||!b||!c)return null;const v1=[a.x-b.x,a.y-b.y],v2=[c.x-b.x,c.y-b.y];const d=(v1[0]*v2[0]+v1[1]*v2[1])/(Math.hypot(...v1)*Math.hypot(...v2)||1);return Math.round(Math.acos(Math.max(-1,Math.min(1,d)))*180/Math.PI)}
+function showAngle(id,val){document.getElementById(id).textContent=val==null?'—':val+'°'}
+function drawPose(points){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ const links=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32]];
+ ctx.lineWidth=Math.max(2,canvas.width/250);ctx.strokeStyle='#b8f36b';ctx.fillStyle='#65d8e8';
+ for(const [a,b] of links){const p=points[a],q=points[b];if(p&&q&&p.visibility>.45&&q.visibility>.45){ctx.beginPath();ctx.moveTo(p.x*canvas.width,p.y*canvas.height);ctx.lineTo(q.x*canvas.width,q.y*canvas.height);ctx.stroke()}}
+ points.forEach(p=>{if(p&&p.visibility>.5){ctx.beginPath();ctx.arc(p.x*canvas.width,p.y*canvas.height,Math.max(2,canvas.width/180),0,Math.PI*2);ctx.fill()}})
+}
+function notes(p){
+ const fb=document.getElementById('feedback');fb.innerHTML='';
+ const lE=angle(p[11],p[13],p[15]), rE=angle(p[12],p[14],p[16]), lK=angle(p[23],p[25],p[27]), rK=angle(p[24],p[26],p[28]);
+ showAngle('leftElbow',lE);showAngle('rightElbow',rE);showAngle('leftKnee',lK);showAngle('rightKnee',rK);
+ const vis=[11,12,13,14,15,16,23,24,25,26,27,28].filter(i=>p[i]&&p[i].visibility>.5).length;
+ const arr=[];
+ if(vis<8)arr.push({t:'warn',s:'Several joints are hard to see. Try brighter light, a wider frame, and keep your full body visible.'});
+ else arr.push({t:'',s:'Most upper-body and leg landmarks are visible in this frame. Keep the camera steady for more consistent comparisons.'});
+ const knees=[lK,rK].filter(v=>v!==null);
+ if(knees.length){const avg=knees.reduce((a,b)=>a+b,0)/knees.length;
+   if(avg>165)arr.push({t:'',s:'Both visible knee angles look relatively straight in this frame. Check your ready stance across several frames; this single frame is not enough to judge batting technique.'});
+   else if(avg<105)arr.push({t:'',s:'Your visible knees are quite bent in this frame. That can be normal during some shots; compare with the shot you intended to play.'});
+   else arr.push({t:'',s:'Your knee bend is in a middle range in this frame. Compare several frames to see how your base changes through the shot.'});
+ }
+ const elbows=[lE,rE].filter(v=>v!==null);
+ if(elbows.length){const avg=elbows.reduce((a,b)=>a+b,0)/elbows.length;
+   if(avg<65)arr.push({t:'',s:'One or both elbows appear quite folded in this frame. Check the full swing and shot type before changing your technique.'});
+   else arr.push({t:'',s:'Elbow angles are measured for reference only. Good elbow position depends on shot type, grip, camera view, and the moment in the swing.'});
+ }
+ arr.push({t:'warn',s:'This is a basic computer-vision snapshot, not a verified coaching verdict. A side/front camera angle can change the measured angles.'});
+ arr.forEach(x=>{const d=document.createElement('div');d.className='feedback '+x.t;d.textContent=x.s;fb.appendChild(d)});
+}
+async function start(){
+ if(!video.src){status('Load a video first.');return}
+ if(!window.Pose){status('Could not load the free pose library. Check internet and reload the page.');return}
+ running=true;busy=false;analyzeBtn.disabled=true;stopBtn.disabled=false;video.pause();status('Loading pose model from free CDN…');
+ try{
+  if(!pose){pose=new Pose({locateFile:(f)=>'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/'+f});pose.setOptions({modelComplexity:0,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});pose.onResults(results=>{if(results.poseLandmarks){lastPoints=results.poseLandmarks;drawPose(lastPoints);notes(lastPoints)}else{drawEmpty();status('No body detected in this frame. Try a clearer angle.')}})}
+  status('Analysing frames… keep the video visible.');await video.play();
+  const loop=async()=>{if(!running)return;if(!busy&&video.readyState>=2){busy=true;try{await pose.send({image:video})}catch(e){status('Analysis issue: '+e.message)}busy=false}if(video.ended){running=false;analyzeBtn.disabled=false;stopBtn.disabled=true;status('Video finished. Move the timeline to another moment and press Start again to inspect it.');return}requestAnimationFrame(loop)};
+  requestAnimationFrame(loop);
+ }catch(e){running=false;analyzeBtn.disabled=false;stopBtn.disabled=true;status('Could not start analysis. Check internet and try a shorter video.')}
+}
+analyzeBtn.addEventListener('click',start);
+stopBtn.addEventListener('click',()=>{running=false;video.pause();analyzeBtn.disabled=false;stopBtn.disabled=true;status('Analysis stopped. Move to a frame and press Start pose analysis to refresh the snapshot.')});
+video.addEventListener('seeked',async()=>{if(pose&&!running&&video.readyState>=2){try{await pose.send({image:video})}catch(e){}}});
+window.addEventListener('resize',()=>{if(video.videoWidth){canvas.width=video.videoWidth;canvas.height=video.videoHeight;if(lastPoints)drawPose(lastPoints)}});
+</script>
+</body>
+</html>
